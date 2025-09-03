@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Resultados: {{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">{{ exam.title }} - Resultados</h1>
+    <div class="alert alert-info text-center">
+        <h4>Tu puntaje: {{ score }} / {{ total }}</h4>
+    </div>
+
+    {% for result in results %}
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ forloop.counter }}. {{ result.question.text }}</h5>
+                <ul class="list-group mb-3">
+                    {% for choice in result.question.choices.all %}
+                        <li class="list-group-item 
+                                   {% if choice == result.correct_choice %}list-group-item-success
+                                   {% elif choice == result.selected_choice %}list-group-item-danger
+                                   {% endif %}">
+                            {{ choice.text }}
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                {% if result.is_correct %}
+                    <div class="alert alert-success">Que gozu</div>
+                {% else %}
+                    <div class="alert alert-danger">La próxima lo harás mejor bachichon</div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'exam_list' %}" class="btn btn-primary">Volver a la lista</a>
+    </div>
+</div>
+{% endblock %}

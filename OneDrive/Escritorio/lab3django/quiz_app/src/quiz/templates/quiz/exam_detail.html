@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ exam.title }}</h1>
+        <p>{{ exam.description }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'exam_edit' exam.id %}" class="btn btn-warning">Editar Examen</a>
+        <a href="{% url 'question_create' exam.id %}" class="btn btn-primary">Añadir Pregunta</a>
+    </div>
+</div>
+
+<div class="mb-4">
+    <h2>Preguntas</h2>
+    
+    {% if questions %}
+        <div class="accordion" id="accordionQuestions">
+            <ul id="question-list" class="list-unstyled">
+                {% for question in questions %}
+                    <li data-id="{{ question.id }}" class="mb-3">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header d-flex align-items-center">
+                                <span class="drag-handle me-2" title="Arrastrar" aria-label="Arrastrar">☰</span>
+
+                                <button class="accordion-button collapsed flex-grow-1" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#collapse{{ question.id }}">
+                                    {{ forloop.counter }}. {{ question.text }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ question.id }}" class="accordion-collapse collapse" data-bs-parent="#accordionQuestions">
+                                <div class="accordion-body">
+                                    <ul class="list-group">
+                                        {% for choice in question.choices.all %}
+                                            <li class="list-group-item {% if choice.is_correct %}list-group-item-success{% endif %}">
+                                                {{ choice.text }} {% if choice.is_correct %}<span class="badge bg-success">Correcta</span>{% endif %}
+                                            </li>
+                                        {% empty %}
+                                            <li class="list-group-item">No hay opciones para esta pregunta.</li>
+                                        {% endfor %}
+                                    </ul>
+                                    <div class="mt-3 text-end">
+                                        <a href="{% url 'question_edit' question.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                        <a href="{% url 'question_delete' question.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar esta pregunta?')">Eliminar</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            Este examen no tiene preguntas todavía.  
+            <a href="{% url 'question_create' exam.id %}" class="btn btn-primary mt-2">Añade la primera pregunta</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'exam_list' %}" class="btn btn-secondary">Volver a la lista</a>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script>
+  const el = document.getElementById('question-list');
+  if (el) {
+    Sortable.create(el, {
+      animation: 150,
+      draggable: 'li',
+      handle: '.drag-handle',
+      ghostClass: 'drag-ghost',
+      onEnd: function () {
+        const order = [];
+        document.querySelectorAll('#question-list li').forEach(li => {
+          order.push(li.dataset.id);
+        });
+
+        fetch("{% url 'question_reorder' exam.id %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({ 'order[]': order })
+        }).catch(() => {});
+      }
+    });
+  }
+</script>
+
+<style>
+  .drag-ghost { opacity: 0.6; }
+  .drag-handle { cursor: grab; font-weight: bold; user-select: none; }
+  .drag-handle:active { cursor: grabbing; }
+</style>
+{% endblock %}
